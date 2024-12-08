@@ -1,0 +1,53 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches: 
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Install zip tool for packaging the Lambda functions
+      - name: Install zip tool
+        run: sudo apt-get install zip
+
+      # Create Zip files for all Lambda functions
+      - name: Create Zip file for Lambda functions
+        run: |
+          cd auth-lambda && zip -r auth-lambda.zip .
+          cd ../Books && zip -r books-lambda.zip .
+          cd ../Cart && zip -r cart-lambda.zip .
+          cd ../CartCheck && zip -r cartcheck-lambda.zip .
+          cd ../updateUserLambda && zip -r update-user-lambda.zip .
+          cd ../showBooksfromCartTable && zip -r show-cart-lambda.zip .
+          cd ../loginLambda && zip -r login-lambda.zip .
+          cd ../deletebook && zip -r deletebook-lambda.zip .
+
+      # Install AWS CLI v2
+      - name: Install AWS CLI v2
+        uses: imehedi/actions-awscli-v2@latest
+        with:
+          args: "aws --version"
+
+      # Deploy each Lambda function using AWS CLI
+      - name: Deploy Lambda Functions
+        run: |
+          aws lambda update-function-code --function-name auth-function --zip-file fileb://auth-lambda/auth-lambda.zip
+          aws lambda update-function-code --function-name books-lambda-function --zip-file fileb://Books/books-lambda.zip
+          aws lambda update-function-code --function-name Cart-Check-lambda-function --zip-file fileb://CartCheck/cartcheck-lambda.zip
+          aws lambda update-function-code --function-name cart-lambda-function --zip-file fileb://Cart/cart-lambda.zip
+          aws lambda update-function-code --function-name deletebook-lambda-function --zip-file fileb://deletebook/deletebook-lambda.zip
+          aws lambda update-function-code --function-name loginLambdaFunction --zip-file fileb://loginLambda/login-lambda.zip
+          aws lambda update-function-code --function-name show-cart-lambda-function --zip-file fileb://showBooksfromCartTable/show-cart-lambda.zip
+          aws lambda update-function-code --function-name update-user-lambda --zip-file fileb://updateUserLambda/update-user-lambda.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
